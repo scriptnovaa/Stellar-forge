@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Input } from './UI/Input'
 import { Button } from './UI/Button'
 import { isValidIPFSUri } from '../utils/validation'
+import { useToast } from '../context/ToastContext'
 
 interface Props {
   onSubmit: (tokenAddress: string, metadataUri: string) => Promise<void>
@@ -10,19 +11,21 @@ interface Props {
 export const SetMetadataForm: React.FC<Props> = ({ onSubmit }) => {
   const [tokenAddress, setTokenAddress] = useState('')
   const [metadataUri, setMetadataUri] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const { addToast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isValidIPFSUri(metadataUri)) {
-      setError('Metadata URI must be a valid IPFS URI (e.g. ipfs://Qm...)')
+      addToast('Metadata URI must be a valid IPFS URI (e.g. ipfs://Qm...)', 'error')
       return
     }
-    setError(null)
     setLoading(true)
     try {
       await onSubmit(tokenAddress, metadataUri)
+      addToast('Metadata updated successfully', 'success')
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to set metadata', 'error')
     } finally {
       setLoading(false)
     }
@@ -44,7 +47,6 @@ export const SetMetadataForm: React.FC<Props> = ({ onSubmit }) => {
         placeholder="ipfs://Qm..."
         required
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={loading}>
         {loading ? 'Submitting...' : 'Set Metadata'}
       </Button>

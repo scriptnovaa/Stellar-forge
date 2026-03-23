@@ -1,6 +1,7 @@
 import './App.css'
+import { WalletProvider } from './context/WalletContext'
 
-function App() {
+function AppContent() {
   const [toast, setToast] = useState<string | null>(null)
 
   const handleGetStarted = () => {
@@ -58,6 +59,14 @@ function App() {
         </div>
       </div>
     </>
+  )
+}
+
+function App() {
+  return (
+    <WalletProvider>
+      <AppContent />
+    </WalletProvider>
   )
 }
 

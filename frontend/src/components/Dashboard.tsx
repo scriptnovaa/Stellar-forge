@@ -5,16 +5,52 @@ import { useDebounce } from '../hooks/useDebounce'
 import { stellarService } from '../services/stellar'
 import { STELLAR_CONFIG } from '../config/stellar'
 
-export const Dashboard: React.FC = () => {
-  const [search, setSearch] = useState('')
-  const [results, setResults] = useState<any[]>([])
+export const TokenDashboard: React.FC = () => {
+  const { wallet } = useWallet()
+  const [tokens, setTokens] = useState<FactoryTokenInfo[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
 
-  const debouncedSearch = useDebounce(search, 300)
+  const loadTokens = useCallback(async () => {
+    if (!wallet.address) {
+      setTokens([])
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    try {
+      const tokenList = await stellarService.getTokensByCreator(wallet.address)
+      setTokens(tokenList)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch tokens'
+      setError(message)
+      setTokens([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [wallet.address])
 
   useEffect(() => {
-    if (!debouncedSearch) { setResults([]); return }
-    stellarService.getTokenInfo(debouncedSearch).then((info) => setResults([info]))
-  }, [debouncedSearch])
+    loadTokens()
+  }, [loadTokens])
+
+  const handleCopyAddress = async (address: string) => {
+    try {
+      await navigator.clipboard.writeText(address)
+      setCopiedAddress(address)
+      setTimeout(() => setCopiedAddress(null), 1800)
+    } catch {
+      setError('Unable to copy token address. Check browser clipboard permissions and try again.')
+    }
+  }
+
+  const formatCreationDate = useMemo(
+    () => (createdAt: number) => new Date(createdAt * 1000).toLocaleString(),
+    []
+  )
 
   const factoryContractId = STELLAR_CONFIG.factoryContractId
 
@@ -43,3 +79,5 @@ export const Dashboard: React.FC = () => {
     </div>
   )
 }
+
+export const Dashboard = TokenDashboard

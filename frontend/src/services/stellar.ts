@@ -37,6 +37,21 @@ interface RpcGetEventsResult {
 
 // ── XDR decode helpers (no SDK dependency) ───────────────────────────────────
 
+type XdrModule = {
+  ScValType: {
+    scvAddress: () => unknown
+    scvI128: () => unknown
+    scvU64: () => unknown
+    scvString: () => unknown
+    scvSymbol: () => unknown
+    scvVoid: () => unknown
+    scvVec: () => unknown
+  }
+  ScAddressType: {
+    scAddressTypeAccount: () => unknown
+  }
+}
+
 /**
  * Decode a base64 XDR ScVal to a human-readable string.
  * We use the stellar-sdk xdr module dynamically so the service still compiles
@@ -53,31 +68,44 @@ async function scValB64ToString(b64: string): Promise<string> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function scValToString(val: any, xdr: any): string {
+function scValToString(val: unknown, xdr: XdrModule): string {
   try {
-    const type = val.switch()
+    const v = val as {
+      switch: () => unknown
+      address: () => {
+        switch: () => unknown
+        accountId: () => { publicKey: () => { toString: () => string } }
+        contractId: () => Uint8Array
+      }
+      i128: () => { hi: () => { toString: () => string }; lo: () => { toString: () => string } }
+      u64: () => { toString: () => string }
+      str: () => { toString: () => string }
+      sym: () => { toString: () => string }
+      vec: () => unknown[] | null
+      toXDR: (format: 'base64') => string
+    }
+    const type = v.switch()
     if (type === xdr.ScValType.scvAddress()) {
-      const addr = val.address()
+      const addr = v.address()
       if (addr.switch() === xdr.ScAddressType.scAddressTypeAccount()) {
         return addr.accountId().publicKey().toString()
       }
       return Buffer.from(addr.contractId()).toString('hex')
     }
     if (type === xdr.ScValType.scvI128()) {
-      const hi = BigInt(val.i128().hi().toString())
-      const lo = BigInt(val.i128().lo().toString())
+      const hi = BigInt(v.i128().hi().toString())
+      const lo = BigInt(v.i128().lo().toString())
       return ((hi << 64n) | lo).toString()
     }
-    if (type === xdr.ScValType.scvU64()) return val.u64().toString()
-    if (type === xdr.ScValType.scvString()) return val.str().toString()
-    if (type === xdr.ScValType.scvSymbol()) return val.sym().toString()
+    if (type === xdr.ScValType.scvU64()) return v.u64().toString()
+    if (type === xdr.ScValType.scvString()) return v.str().toString()
+    if (type === xdr.ScValType.scvSymbol()) return v.sym().toString()
     if (type === xdr.ScValType.scvVoid()) return 'none'
     if (type === xdr.ScValType.scvVec()) {
-      const items: string[] = (val.vec() ?? []).map((v: any) => scValToString(v, xdr))
+      const items: string[] = (v.vec() ?? []).map((item) => scValToString(item, xdr))
       return items.join(', ')
     }
-    return b64ToString(val.toXDR('base64'))
+    return b64ToString(v.toXDR('base64'))
   } catch {
     return ''
   }
@@ -103,7 +131,7 @@ async function parseRpcEvent(raw: RpcEventResponse): Promise<ContractEvent | nul
 
     const { xdr } = await import('stellar-sdk')
     const valueVal = xdr.ScVal.fromXDR(raw.value, 'base64')
-    const items: any[] = valueVal.vec() ?? []
+    const items: unknown[] = valueVal.vec() ?? []
 
     const data: Record<string, string> = {}
 

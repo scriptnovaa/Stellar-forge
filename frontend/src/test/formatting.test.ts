@@ -1,5 +1,31 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { formatTimestamp, timeAgo, formatXLM, truncateAddress, stroopsToXLM, xlmToStroops, stellarExplorerUrl } from '../utils/formatting'
+import {
+  formatTimestamp,
+  timeAgo,
+  formatXLM,
+  truncateAddress,
+  stroopsToXLM,
+  xlmToStroops,
+  stellarExplorerUrl,
+  ipfsToGatewayUrl,
+} from '../utils/formatting'
+
+describe('ipfsToGatewayUrl', () => {
+  it('converts CIDv0 ipfs URI to pinata gateway URL', () => {
+    expect(ipfsToGatewayUrl('ipfs://QmXxx'))
+      .toBe('https://gateway.pinata.cloud/ipfs/QmXxx')
+  })
+
+  it('converts CIDv1 ipfs URI to pinata gateway URL', () => {
+    expect(ipfsToGatewayUrl('ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi'))
+      .toBe('https://gateway.pinata.cloud/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi')
+  })
+
+  it('returns non-IPFS URIs unchanged', () => {
+    expect(ipfsToGatewayUrl('https://example.com/metadata.json'))
+      .toBe('https://example.com/metadata.json')
+  })
+})
 
 describe('stellarExplorerUrl', () => {
   it('builds a testnet tx link', () => {

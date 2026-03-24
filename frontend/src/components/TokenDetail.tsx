@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { useStellarContext } from '../context/StellarContext'
 import { useParams, Link } from 'react-router-dom'
-import { stellarService } from '../services/stellar'
 import { ipfsService } from '../services/ipfs'
-import { IPFS_CONFIG } from '../config/ipfs'
 import { useNetwork } from '../context/NetworkContext'
-import { stellarExplorerUrl } from '../utils/formatting'
+import { stellarExplorerUrl, ipfsToGatewayUrl } from '../utils/formatting'
 import type { TokenInfo, IPFSMetadata } from '../types'
 import { Card } from './UI/Card'
 import { Button } from './UI/Button'
@@ -20,11 +17,6 @@ type ActivePanel = 'mint' | 'burn' | 'metadata' | null
 
 function isValidStellarAddress(addr: string): boolean {
   return /^[CG][A-Z0-9]{55}$/.test(addr)
-}
-
-function ipfsToHttp(uri: string): string {
-  const cid = uri.replace('ipfs://', '')
-  return `${IPFS_CONFIG.pinataGateway}/${cid}`
 }
 
 function formatTimestamp(ts: number): string {
@@ -68,7 +60,7 @@ export const TokenDetail: React.FC = () => {
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
-  }, [address])
+  }, [address, stellarService])
 
   const handleSetMetadata = async (_addr: string, uri: string) => {
     // placeholder — real impl would sign + submit a contract call
@@ -102,7 +94,7 @@ export const TokenDetail: React.FC = () => {
     )
   }
 
-  const imageUrl = metadata?.image ? ipfsToHttp(metadata.image) : null
+  const imageUrl = metadata?.image ? ipfsToGatewayUrl(metadata.image) : null
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -181,7 +173,7 @@ export const TokenDetail: React.FC = () => {
             {imageUrl && (
               <img
                 src={imageUrl}
-                alt={`${token.name} token image`}
+                alt={`${token.name} token art`}
                 className="w-24 h-24 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />

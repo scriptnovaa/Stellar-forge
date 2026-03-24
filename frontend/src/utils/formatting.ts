@@ -1,5 +1,7 @@
 // Formatting utilities
 
+import { IPFS_CONFIG } from '../config/ipfs'
+
 export const formatXLM = (amount: string | number): string => {
   return `${parseFloat(amount.toString()).toFixed(7)} XLM`
 }
@@ -17,9 +19,14 @@ export const xlmToStroops = (xlm: number | string): number => {
   return Math.floor(parseFloat(xlm.toString()) * 10000000)
 }
 
-export const stellarExplorerUrl = (value: string, type: 'account' | 'contract'): string => {
-  const base = 'https://stellar.expert/explorer/testnet'
-  return type === 'contract' ? `${base}/contract/${value}` : `${base}/account/${value}`
+export const ipfsToGatewayUrl = (uri: string): string => {
+  if (!uri.startsWith('ipfs://')) return uri
+
+  const path = uri.slice('ipfs://'.length).replace(/^\/+/, '')
+  const gatewayBase = IPFS_CONFIG.pinataGateway.replace(/\/+$/, '')
+  return `${gatewayBase}/${path}`
+}
+
 // Format as 'Mar 19, 2026, 3:28 PM UTC'
 const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', year: 'numeric',

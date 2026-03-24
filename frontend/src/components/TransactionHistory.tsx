@@ -1,7 +1,6 @@
-import { Button,Spinner } from './UI';
+import { Button, Spinner } from './UI'
 import { useState, useEffect, useCallback } from 'react'
-import { stellarService } from '../services/stellar'
-import { STELLAR_CONFIG } from '../config/stellar'
+import { useStellarContext } from '../context/StellarContext'
 import { useNetwork } from '../context/NetworkContext'
 import { stellarExplorerUrl } from '../utils/formatting'
 import type { ContractEvent, ContractEventType } from '../types'
@@ -134,7 +133,7 @@ export const TransactionHistory: React.FC<Props> = ({
     } finally {
       setLoading(false)
     }
-  }, [contractId, pageSize, filterEvents])
+  }, [contractId, pageSize, filterEvents, stellarService])
 
   useEffect(() => {
     fetchInitial()

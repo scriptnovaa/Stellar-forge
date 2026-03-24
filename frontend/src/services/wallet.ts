@@ -6,6 +6,15 @@ import {
 } from '@stellar/freighter-api'
 import { STELLAR_CONFIG } from '../config/stellar'
 
+interface HorizonBalance {
+  asset_type: string
+  balance: string
+}
+
+interface HorizonAccountResponse {
+  balances: HorizonBalance[]
+}
+
 const FREIGHTER_INSTALL_URL = 'https://www.freighter.app/'
 
 export class WalletService {
@@ -101,11 +110,11 @@ export class WalletService {
         throw new Error(`Failed to fetch account: ${response.statusText}`)
       }
 
-      const accountData = await response.json()
+      const accountData: HorizonAccountResponse = await response.json()
 
       // Find native XLM balance
       const nativeBalance = accountData.balances.find(
-        (balance: any) => balance.asset_type === 'native'
+        (balance) => balance.asset_type === 'native'
       )
 
       return nativeBalance ? nativeBalance.balance : '0'

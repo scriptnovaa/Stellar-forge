@@ -274,6 +274,27 @@ impl TokenFactory {
         Ok(())
     }
 
+    pub fn transfer_admin(env: Env, current_admin: Address, new_admin: Address) -> Result<(), Error> {
+        current_admin.require_auth();
+
+        let mut state: FactoryState = env.storage().instance().get(&symbol_short!("state")).unwrap();
+
+        if state.admin != current_admin {
+            return Err(Error::Unauthorized);
+        }
+
+        if current_admin == new_admin {
+            return Err(Error::InvalidParameters);
+        }
+
+        state.admin = new_admin.clone();
+        env.storage().instance().set(&symbol_short!("state"), &state);
+
+        env.events().publish((symbol_short!("adm_xfer"),), (current_admin, new_admin));
+
+        Ok(())
+    }
+
     pub fn get_state(env: Env) -> FactoryState {
         env.storage().instance().get(&symbol_short!("state")).unwrap()
     }

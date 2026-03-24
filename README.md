@@ -181,6 +181,15 @@ stellar-forge/
 └── README.md
 ```
 
+## Security
+
+We take security seriously. If you discover a security vulnerability, please review our [Security Policy](SECURITY.md) for responsible disclosure guidelines.
+
+For users deploying tokens, we strongly recommend:
+- Always test on testnet first before mainnet deployment
+- Review all parameters carefully using the mainnet deployment checklist
+- Verify contract addresses and transaction details before signing
+
 ## Contributing
 
 1. Fork the repository

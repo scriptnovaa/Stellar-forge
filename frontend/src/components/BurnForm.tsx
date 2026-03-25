@@ -3,18 +3,20 @@ import { useTranslation } from 'react-i18next'
 import { Input } from './UI/Input'
 import { useDebounce } from '../hooks/useDebounce'
 import { stellarService } from '../services/stellar'
+import type { TokenInfo } from '../types'
 
 export const BurnForm: React.FC = () => {
   const { t } = useTranslation()
   const [tokenAddress, setTokenAddress] = useState('')
   const [amount, setAmount] = useState('')
-  const [tokenInfo, setTokenInfo] = useState<any>(null)
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null)
+  const [pending, setPending] = useState(false)
 
   const debouncedAddress = useDebounce(tokenAddress, 300)
 
   useEffect(() => {
     if (!debouncedAddress) return
-    stellarService.getTokenInfo(debouncedAddress).then(setTokenInfo)
+    stellarService.getTokenInfo(debouncedAddress).then(setTokenInfo).catch(() => setTokenInfo(null))
   }, [debouncedAddress])
 
   const handleSubmit = (e: React.FormEvent) => {

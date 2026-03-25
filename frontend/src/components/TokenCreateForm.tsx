@@ -1,22 +1,22 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Input } from './UI/Input'
-import { Button } from './UI/Button'
-import { MainnetConfirmationModal } from './UI/MainnetConfirmationModal'
+import { Input, Button, MainnetConfirmationModal, ConfirmModal } from './UI'
 import { useMainnetConfirmation } from '../hooks/useMainnetConfirmation'
 import { useToast } from '../context/ToastContext'
-import { stellarService } from '../services/stellar'
+import { useStellarContext } from '../context/StellarContext'
 import { TokenDeployParams } from '../types'
 import { validateTokenSymbol, validateTokenName, validateDecimals } from '../utils/validation'
 
+const ESTIMATED_FEE = '0.01' // XLM
+
 export const TokenCreateForm: React.FC = () => {
-  const { t } = useTranslation()
+  const { stellarService } = useStellarContext()
   const [name, setName] = useState('')
   const [symbol, setSymbol] = useState('')
   const [decimals, setDecimals] = useState('7')
   const [initialSupply, setInitialSupply] = useState('')
   const [description, setDescription] = useState('')
   const [isDeploying, setIsDeploying] = useState(false)
+  const [pendingParams, setPendingParams] = useState<TokenDeployParams | null>(null)
 
   const { showModal, tokenParams, requestDeployment, closeModal, confirmDeployment } =
     useMainnetConfirmation()
@@ -25,9 +25,9 @@ export const TokenCreateForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateTokenName(name)) { addToast(t('tokenForm.invalidName'), 'error'); return }
-    if (!validateTokenSymbol(symbol)) { addToast(t('tokenForm.invalidSymbol'), 'error'); return }
-    if (!validateDecimals(parseInt(decimals))) { addToast(t('tokenForm.invalidDecimals'), 'error'); return }
+    if (!validateTokenName(name)) { addToast('Invalid token name', 'error'); return }
+    if (!validateTokenSymbol(symbol)) { addToast('Invalid token symbol', 'error'); return }
+    if (!validateDecimals(parseInt(decimals))) { addToast('Decimals must be between 0 and 18', 'error'); return }
 
     const params: TokenDeployParams = {
       name,
@@ -37,7 +37,13 @@ export const TokenCreateForm: React.FC = () => {
       ...(description && { metadata: { description, image: new File([], '') } }),
     }
 
-    requestDeployment(params, () => deployToken(params))
+    setPendingParams(params)
+  }
+
+  const handleConfirm = () => {
+    if (!pendingParams) return
+    setPendingParams(null)
+    requestDeployment(pendingParams, () => deployToken(pendingParams))
   }
 
   const deployToken = async (params: TokenDeployParams) => {
@@ -45,7 +51,7 @@ export const TokenCreateForm: React.FC = () => {
     try {
       const result = await stellarService.deployToken(params)
       if (result.success) {
-        addToast(t('tokenForm.deploySuccess'), 'success')
+        addToast('Token deployed successfully!', 'success')
         setName(''); setSymbol(''); setDecimals('7'); setInitialSupply(''); setDescription('')
       } else {
         addToast(t('tokenForm.deployFailed'), 'error')
@@ -61,11 +67,10 @@ export const TokenCreateForm: React.FC = () => {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label={t('tokenForm.tokenName')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('tokenForm.tokenNamePlaceholder')} required />
-        <Input label={t('tokenForm.tokenSymbol')} value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder={t('tokenForm.tokenSymbolPlaceholder')} required />
-        <Input label={t('tokenForm.decimals')} type="number" value={decimals} onChange={(e) => setDecimals(e.target.value)} placeholder="7" min="0" max="18" required />
-        <Input label={t('tokenForm.initialSupply')} value={initialSupply} onChange={(e) => setInitialSupply(e.target.value)} placeholder={t('tokenForm.initialSupplyPlaceholder')} required />
-
+        <Input label="Token Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="My Token" required />
+        <Input label="Token Symbol" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder="MTK" required />
+        <Input label="Decimals" type="number" value={decimals} onChange={(e) => setDecimals(e.target.value)} placeholder="7" min="0" max="18" required />
+        <Input label="Initial Supply" value={initialSupply} onChange={(e) => setInitialSupply(e.target.value)} placeholder="1000000" required />
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
             {t('tokenForm.descriptionLabel')}
@@ -79,11 +84,26 @@ export const TokenCreateForm: React.FC = () => {
             rows={3}
           />
         </div>
-
         <Button type="submit" disabled={isDeploying}>
           {isDeploying ? t('tokenForm.deploying') : t('tokenForm.deploy')}
         </Button>
       </form>
+
+      <ConfirmModal
+        isOpen={!!pendingParams}
+        title="Confirm Token Creation"
+        description="Review the details before deploying your token on-chain."
+        details={[
+          { label: 'Name', value: pendingParams?.name ?? '' },
+          { label: 'Symbol', value: pendingParams?.symbol ?? '' },
+          { label: 'Decimals', value: pendingParams?.decimals ?? '' },
+          { label: 'Initial Supply', value: pendingParams?.initialSupply ?? '' },
+          { label: 'Estimated Fee', value: `${ESTIMATED_FEE} XLM` },
+        ]}
+        onConfirm={handleConfirm}
+        onCancel={() => setPendingParams(null)}
+        confirmLabel="Deploy Token"
+      />
 
       {tokenParams && (
         <MainnetConfirmationModal

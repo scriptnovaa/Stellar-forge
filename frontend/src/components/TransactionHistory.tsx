@@ -1,9 +1,8 @@
+import { Button, Spinner } from './UI'
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
-import { stellarService } from '../services/stellar'
-import { Button } from './UI/Button'
-import { Spinner } from './UI/Spinner'
-import { STELLAR_CONFIG } from '../config/stellar'
+import { useStellarContext } from '../context/StellarContext'
+import { useNetwork } from '../context/NetworkContext'
+import { stellarExplorerUrl } from '../utils/formatting'
 import type { ContractEvent, ContractEventType } from '../types'
 
 interface Props {
@@ -39,8 +38,56 @@ function EventDataRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export const TransactionHistory: React.FC<Props> = ({ contractId, tokenAddress, pageSize = 20 }) => {
-  const { t } = useTranslation()
+function renderEventData(event: ContractEvent) {
+  const d = event.data
+  switch (event.type) {
+    case 'token_created':
+      return (
+        <div className="flex flex-wrap gap-3">
+          <EventDataRow label="Token" value={d.tokenAddress} />
+          <EventDataRow label="Creator" value={d.creator} />
+        </div>
+      )
+    case 'tokens_minted':
+      return (
+        <div className="flex flex-wrap gap-3">
+          <EventDataRow label="Token" value={d.tokenAddress} />
+          <EventDataRow label="To" value={d.to} />
+          <EventDataRow label="Amount" value={d.amount} />
+        </div>
+      )
+    case 'tokens_burned':
+      return (
+        <div className="flex flex-wrap gap-3">
+          <EventDataRow label="Token" value={d.tokenAddress} />
+          <EventDataRow label="From" value={d.from} />
+          <EventDataRow label="Amount" value={d.amount} />
+        </div>
+      )
+    case 'metadata_set':
+      return (
+        <div className="flex flex-wrap gap-3">
+          <EventDataRow label="Token" value={d.tokenAddress} />
+          <EventDataRow label="URI" value={d.metadataUri} />
+        </div>
+      )
+    case 'fees_updated':
+      return (
+        <div className="flex flex-wrap gap-3">
+          <EventDataRow label="Base fee" value={d.baseFee} />
+          <EventDataRow label="Metadata fee" value={d.metadataFee} />
+        </div>
+      )
+  }
+}
+
+export const TransactionHistory: React.FC<Props> = ({
+  contractId,
+  tokenAddress,
+  pageSize = 20,
+}) => {
+  const { stellarService } = useStellarContext()
+  const { network } = useNetwork()
   const [events, setEvents] = useState<ContractEvent[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -69,7 +116,7 @@ export const TransactionHistory: React.FC<Props> = ({ contractId, tokenAddress, 
     } finally {
       setLoading(false)
     }
-  }, [contractId, pageSize, filterEvents, t])
+  }, [contractId, pageSize, filterEvents, stellarService])
 
   useEffect(() => { fetchInitial() }, [fetchInitial])
 
@@ -137,7 +184,7 @@ export const TransactionHistory: React.FC<Props> = ({ contractId, tokenAddress, 
             </div>
             {renderEventData(event)}
             <a
-              href={`https://stellar.expert/explorer/${STELLAR_CONFIG.network}/tx/${event.txHash}`}
+              href={stellarExplorerUrl('tx', event.txHash, network)}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-0.5 text-xs text-indigo-500 hover:underline font-mono"

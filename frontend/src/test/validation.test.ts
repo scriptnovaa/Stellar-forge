@@ -62,3 +62,119 @@ describe('validateTokenParams - decimals', () => {
     expect(errors.decimals).toBeDefined()
   })
 })
+
+import {
+  isValidStellarAddress,
+  isValidImageFile,
+  validateTokenName,
+  validateTokenSymbol,
+  validateDecimals,
+} from '../utils/validation'
+
+describe('isValidStellarAddress', () => {
+  it('accepts a valid 56-char G address', () => {
+    expect(isValidStellarAddress('G' + 'A'.repeat(55))).toBe(true)
+  })
+
+  it('rejects an address not starting with G', () => {
+    expect(isValidStellarAddress('A' + 'A'.repeat(55))).toBe(false)
+  })
+
+  it('rejects an address that is too short', () => {
+    expect(isValidStellarAddress('GABC')).toBe(false)
+  })
+
+  it('rejects an empty string', () => {
+    expect(isValidStellarAddress('')).toBe(false)
+  })
+})
+
+describe('isValidImageFile', () => {
+  const makeFile = (type: string, size: number) => ({ type, size } as File)
+
+  it('accepts a valid JPEG under 5MB', () => {
+    expect(isValidImageFile(makeFile('image/jpeg', 1024)).valid).toBe(true)
+  })
+
+  it('accepts a valid PNG under 5MB', () => {
+    expect(isValidImageFile(makeFile('image/png', 1024)).valid).toBe(true)
+  })
+
+  it('accepts a valid GIF under 5MB', () => {
+    expect(isValidImageFile(makeFile('image/gif', 1024)).valid).toBe(true)
+  })
+
+  it('rejects an unsupported file type', () => {
+    const result = isValidImageFile(makeFile('image/webp', 1024))
+    expect(result.valid).toBe(false)
+    expect(result.error).toBeDefined()
+  })
+
+  it('rejects a file over 5MB', () => {
+    const result = isValidImageFile(makeFile('image/png', 6 * 1024 * 1024))
+    expect(result.valid).toBe(false)
+    expect(result.error).toBeDefined()
+  })
+})
+
+describe('validateTokenName', () => {
+  it('accepts a name within bounds', () => {
+    expect(validateTokenName('MyToken')).toBe(true)
+  })
+
+  it('accepts a single character name', () => {
+    expect(validateTokenName('A')).toBe(true)
+  })
+
+  it('accepts a 32-character name', () => {
+    expect(validateTokenName('A'.repeat(32))).toBe(true)
+  })
+
+  it('rejects an empty name', () => {
+    expect(validateTokenName('')).toBe(false)
+  })
+
+  it('rejects a name over 32 characters', () => {
+    expect(validateTokenName('A'.repeat(33))).toBe(false)
+  })
+})
+
+describe('validateTokenSymbol', () => {
+  it('accepts a valid symbol', () => {
+    expect(validateTokenSymbol('MTK')).toBe(true)
+  })
+
+  it('accepts a single character symbol', () => {
+    expect(validateTokenSymbol('X')).toBe(true)
+  })
+
+  it('accepts a 12-character symbol', () => {
+    expect(validateTokenSymbol('A'.repeat(12))).toBe(true)
+  })
+
+  it('rejects an empty symbol', () => {
+    expect(validateTokenSymbol('')).toBe(false)
+  })
+
+  it('rejects a symbol over 12 characters', () => {
+    expect(validateTokenSymbol('A'.repeat(13))).toBe(false)
+  })
+})
+
+describe('validateDecimals', () => {
+  it('accepts 0', () => {
+    expect(validateDecimals(0)).toBe(true)
+  })
+
+  it('accepts 18', () => {
+    expect(validateDecimals(18)).toBe(true)
+  })
+
+  it('rejects -1', () => {
+    expect(validateDecimals(-1)).toBe(false)
+  })
+
+  it('rejects 19', () => {
+    expect(validateDecimals(19)).toBe(false)
+  })
+})

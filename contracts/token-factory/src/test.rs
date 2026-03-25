@@ -231,6 +231,52 @@ fn test_set_metadata_insufficient_fee() {
     assert_eq!(result, Err(Ok(Error::InsufficientFee)));
 }
 
+#[test]
+fn test_set_metadata_already_set() {
+    let s = Setup::new();
+    let admin = Address::generate(&s.env);
+    s.fund(&admin, 1_000);
+
+    let token_addr = s.new_token(&admin);
+
+    // First call succeeds
+    s.client.set_metadata(
+        &token_addr, &admin,
+        &String::from_str(&s.env, "ipfs://Qm123"),
+        &500,
+    );
+
+    // Second call on the same token should return MetadataAlreadySet
+    let result = s.client.try_set_metadata(
+        &token_addr, &admin,
+        &String::from_str(&s.env, "ipfs://Qm456"),
+        &500,
+    );
+    assert_eq!(result, Err(Ok(Error::MetadataAlreadySet)));
+}
+
+#[test]
+fn test_set_metadata_different_tokens_independent() {
+    let s = Setup::new();
+    let admin = Address::generate(&s.env);
+    s.fund(&admin, 1_000);
+
+    let token_a = s.new_token(&admin);
+    let token_b = s.new_token(&admin);
+
+    // Setting metadata on two different tokens should both succeed
+    s.client.set_metadata(
+        &token_a, &admin,
+        &String::from_str(&s.env, "ipfs://QmA"),
+        &500,
+    );
+    s.client.set_metadata(
+        &token_b, &admin,
+        &String::from_str(&s.env, "ipfs://QmB"),
+        &500,
+    );
+}
+
 // ── mint_tokens ───────────────────────────────────────────────────────────────
 
 #[test]

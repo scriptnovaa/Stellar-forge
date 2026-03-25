@@ -190,6 +190,11 @@ impl TokenFactory {
             return Err(Error::InsufficientFee);
         }
 
+        // Guard: prevent overwriting existing metadata
+        if env.storage().instance().has(&(&token_address, symbol_short!("meta"))) {
+            return Err(Error::MetadataAlreadySet);
+        }
+
         token::TokenClient::new(&env, &state.fee_token).transfer(
             &admin,
             &state.treasury,

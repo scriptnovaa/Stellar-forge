@@ -1,12 +1,11 @@
 import { ToastContainer, Button, Spinner } from './components/UI';
 import './App.css'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useState } from 'react'
-import { StellarProvider } from './context/StellarContext'
+import { useTranslation } from 'react-i18next'
 import { WalletProvider } from './context/WalletContext'
 import { ToastProvider, useToast } from './context/ToastContext'
 import { NetworkProvider, useNetwork } from './context/NetworkContext'
 import { NetworkSwitcher } from './components/NetworkSwitcher'
+import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { useWallet } from './hooks/useWallet'
 import { truncateAddress, formatXLM } from './utils/formatting'
 import { NavBar } from './components/NavBar'
@@ -20,37 +19,29 @@ import { isFactoryConfigured } from './config/env'
 
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { wallet } = useWallet()
-
-  if (!wallet.isConnected) {
-    return <Navigate to="/" replace />
-  }
-
+  if (!wallet.isConnected) return <Navigate to="/" replace />
   return children
 }
 
 function AppContent() {
   const { wallet, connect, disconnect, isConnecting, error, isInstalled } = useWallet()
   const { addToast } = useToast()
-  const { network } = useNetwork()
-  const [showBanner, setShowBanner] = useState(true)
+  const { t } = useTranslation()
 
-  const isLowBalance = wallet.isConnected && wallet.balance && parseFloat(wallet.balance) < 10
-  const showFriendbotBanner = showBanner && network === 'testnet' && isLowBalance
-
-  const handleGetStarted = () => addToast("Welcome! Let's deploy your token.", 'info')
+  const handleGetStarted = () => addToast(t('home.welcomeToast'), 'info')
 
   const handleConnect = async () => {
     try {
       await connect()
-      if (!error) addToast('Wallet connected', 'success')
+      if (!error) addToast(t('wallet.connected'), 'success')
     } catch {
-      addToast('Failed to connect wallet', 'error')
+      addToast(t('wallet.connectFailed'), 'error')
     }
   }
 
   const handleDisconnect = () => {
     disconnect()
-    addToast('Wallet disconnected', 'info')
+    addToast(t('wallet.disconnected'), 'info')
   }
 
   return (
@@ -59,7 +50,7 @@ function AppContent() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded"
       >
-        Skip to main content
+        {t('app.skipToMain')}
       </a>
 
       <div className="min-h-screen bg-gray-100">
@@ -67,11 +58,12 @@ function AppContent() {
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">StellarForge</h1>
-                <p className="mt-2 text-sm text-gray-600">Stellar Token Deployer</p>
+                <h1 className="text-3xl font-bold text-gray-900">{t('app.title')}</h1>
+                <p className="mt-2 text-sm text-gray-600">{t('app.subtitle')}</p>
               </div>
 
               <div className="flex items-center gap-4">
+                <LanguageSwitcher />
                 <NetworkSwitcher />
 
                 {!isInstalled && (
@@ -81,7 +73,7 @@ function AppContent() {
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:text-blue-800 underline"
                   >
-                    Install Freighter
+                    {t('wallet.installFreighter')}
                   </a>
                 )}
 
@@ -96,7 +88,7 @@ function AppContent() {
                       )}
                     </div>
                     <Button onClick={handleDisconnect} variant="secondary" size="sm">
-                      Disconnect
+                      {t('wallet.disconnect')}
                     </Button>
                   </div>
                 ) : (
@@ -104,10 +96,10 @@ function AppContent() {
                     {isConnecting ? (
                       <span className="flex items-center gap-2">
                         <Spinner size="sm" />
-                        Connecting...
+                        {t('wallet.connecting')}
                       </span>
                     ) : (
-                      'Connect Wallet'
+                      t('wallet.connect')
                     )}
                   </Button>
                 )}
@@ -160,7 +152,7 @@ function AppContent() {
                 className="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg"
                 role="alert"
               >
-                <p className="font-medium">Error</p>
+                <p className="font-medium">{t('errors.title')}</p>
                 <p className="text-sm">{error}</p>
               </div>
             )}

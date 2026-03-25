@@ -4,7 +4,6 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
-  /** Required for icon-only buttons with no visible text */
   'aria-label'?: string
 }
 

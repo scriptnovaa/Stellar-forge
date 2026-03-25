@@ -54,11 +54,11 @@ export const TokenCreateForm: React.FC = () => {
         addToast('Token deployed successfully!', 'success')
         setName(''); setSymbol(''); setDecimals('7'); setInitialSupply(''); setDescription('')
       } else {
-        addToast('Token deployment failed', 'error')
+        addToast(t('tokenForm.deployFailed'), 'error')
       }
     } catch (error) {
       console.error('Deployment error:', error)
-      addToast('An error occurred during deployment', 'error')
+      addToast(t('tokenForm.deployError'), 'error')
     } finally {
       setIsDeploying(false)
     }
@@ -73,19 +73,19 @@ export const TokenCreateForm: React.FC = () => {
         <Input label="Initial Supply" value={initialSupply} onChange={(e) => setInitialSupply(e.target.value)} placeholder="1000000" required />
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-            Description (Optional)
+            {t('tokenForm.descriptionLabel')}
           </label>
           <textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe your token..."
+            placeholder={t('tokenForm.descriptionPlaceholder')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={3}
           />
         </div>
         <Button type="submit" disabled={isDeploying}>
-          {isDeploying ? 'Deploying...' : 'Deploy Token'}
+          {isDeploying ? t('tokenForm.deploying') : t('tokenForm.deploy')}
         </Button>
       </form>
 

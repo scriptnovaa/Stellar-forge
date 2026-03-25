@@ -4,6 +4,7 @@ import { TransactionHistory } from './TransactionHistory'
 import { useDebounce } from '../hooks/useDebounce'
 import { useTokens } from '../hooks/useTokens'
 import { STELLAR_CONFIG } from '../config/stellar'
+import { useWallet } from '../hooks/useWallet'
 
 export const TokenDashboard: React.FC = () => {
   const { tokens, isLoading, error } = useTokens()
@@ -44,7 +45,7 @@ export const TokenDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="space-y-4">
         <Input
-          label="Search tokens"
+          label={t('dashboard.searchLabel')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by address, name or symbol..."
@@ -96,7 +97,7 @@ export const TokenDashboard: React.FC = () => {
 
       {factoryContractId && (
         <div className="space-y-2">
-          <h2 className="text-base font-semibold text-gray-800">Recent Activity</h2>
+          <h2 className="text-base font-semibold text-gray-800">{t('dashboard.recentActivity')}</h2>
           <TransactionHistory contractId={factoryContractId} />
         </div>
       )}

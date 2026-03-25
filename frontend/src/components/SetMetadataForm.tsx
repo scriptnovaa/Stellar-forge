@@ -22,7 +22,7 @@ export const SetMetadataForm: React.FC<Props> = ({ tokenAddress: initialAddress 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!isValidIPFSUri(metadataUri)) {
-      addToast('Metadata URI must be a valid IPFS URI (e.g. ipfs://Qm...)', 'error')
+      addToast(t('setMetadata.invalidUri'), 'error')
       return
     }
     setPending(true)
@@ -33,9 +33,9 @@ export const SetMetadataForm: React.FC<Props> = ({ tokenAddress: initialAddress 
     setLoading(true)
     try {
       await onSubmit(tokenAddress, metadataUri)
-      addToast('Metadata updated successfully', 'success')
+      addToast(t('setMetadata.success'), 'success')
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to set metadata', 'error')
+      addToast(err instanceof Error ? err.message : t('setMetadata.success'), 'error')
     } finally {
       setLoading(false)
     }

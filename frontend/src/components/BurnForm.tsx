@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Input, Button, ConfirmModal } from './UI'
+import { useTranslation } from 'react-i18next'
+import { Input } from './UI/Input'
 import { useDebounce } from '../hooks/useDebounce'
 import { useTokenBalance } from '../hooks/useTokenBalance'
 import { useWalletContext } from '../context/WalletContext'
 import { stellarService } from '../services/stellar'
 import type { TokenInfo } from '../types'
 
-interface BurnFormProps {
-  tokenAddress?: string
-  onSuccess?: () => void
-}
-
-export const BurnForm: React.FC<BurnFormProps> = ({ tokenAddress: initialAddress = '', onSuccess }) => {
-  const [tokenAddress, setTokenAddress] = useState(initialAddress)
+export const BurnForm: React.FC = () => {
+  const { t } = useTranslation()
+  const [tokenAddress, setTokenAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null)
   const [pending, setPending] = useState(false)
@@ -95,6 +92,9 @@ export const BurnForm: React.FC<BurnFormProps> = ({ tokenAddress: initialAddress
         onCancel={() => setPending(false)}
         confirmLabel="Burn Tokens"
       />
-    </>
+      <button type="submit" className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+        {t('burnForm.burn')}
+      </button>
+    </form>
   )
 }

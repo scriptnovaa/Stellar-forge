@@ -54,6 +54,21 @@ export const stellarExplorerUrl = (
   return `${base}/${path}/${value}`
 }
 
+export const formatTokenAmount = (amount: string | number, decimals: number): string => {
+  if (decimals === 0) return amount.toString()
+  const raw = BigInt(amount.toString())
+  const factor = BigInt(10 ** decimals)
+  const whole = raw / factor
+  const frac = (raw < 0n ? -raw : raw) % factor
+  return `${whole}.${frac.toString().padStart(decimals, '0')}`
+}
+
+export const parseTokenAmount = (display: string, decimals: number): string => {
+  const [whole, frac = ''] = display.split('.')
+  const fracPadded = frac.padEnd(decimals, '0').slice(0, decimals)
+  return (BigInt(whole) * BigInt(10 ** decimals) + BigInt(fracPadded)).toString()
+}
+
 export const timeAgo = (timestamp: number): string => {
   const seconds = Math.floor(Date.now() / 1000) - timestamp
   if (seconds < 0) return 'just now'

@@ -68,7 +68,11 @@ npm install
 ```
 
 ### 4. Environment Variables
-Create a `.env` file in the `frontend` directory:
+Copy the example file and fill in your values:
+```bash
+cp frontend/.env.example frontend/.env
+```
+
 ```env
 VITE_NETWORK=testnet
 VITE_FACTORY_CONTRACT_ID=<deployed-contract-id>
@@ -196,14 +200,86 @@ stellar-forge/
 
 We take security seriously. If you discover a security vulnerability, please review our [Security Policy](SECURITY.md) for responsible disclosure guidelines.
 
+### Content Security Policy (CSP)
+
+A strict CSP is defined as a `<meta>` tag in `frontend/index.html`:
+
+```
+default-src 'self';
+connect-src 'self' https://*.stellar.org https://api.pinata.cloud;
+img-src 'self' data: https://gateway.pinata.cloud;
+script-src 'self'
+```
+
+For stronger enforcement, set the CSP as an HTTP response header on your hosting provider instead of (or in addition to) the meta tag — HTTP headers take precedence and support more directives like `frame-ancestors`.
+
+**Vercel** — add to `vercel.json`:
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; connect-src 'self' https://*.stellar.org https://api.pinata.cloud; img-src 'self' data: https://gateway.pinata.cloud; script-src 'self'"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Netlify** — add to `netlify.toml`:
+```toml
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.stellar.org https://api.pinata.cloud; img-src 'self' data: https://gateway.pinata.cloud; script-src 'self'"
+```
+
+**Nginx** — add to your server block:
+```nginx
+add_header Content-Security-Policy "default-src 'self'; connect-src 'self' https://*.stellar.org https://api.pinata.cloud; img-src 'self' data: https://gateway.pinata.cloud; script-src 'self'";
+```
+
 For users deploying tokens, we strongly recommend:
 - Always test on testnet first before mainnet deployment
 - Review all parameters carefully using the mainnet deployment checklist
 - Verify contract addresses and transaction details before signing
 
+## Fee Bump Transactions
+
+If a user's XLM balance is too low to cover the network base fee, their transaction will fail. Stellar's [fee bump](https://developers.stellar.org/docs/learn/encyclopedia/transactions-specialized/fee-bump-transactions) mechanism lets a third-party account (the *fee source*) pay the base fee on behalf of the original sender.
+
+### When to use fee bumps
+
+- The inner transaction's source account has near-zero XLM.
+- You want to sponsor fees for users as part of your application UX.
+- Resubmitting a stuck transaction with a higher fee without re-signing the inner envelope.
+
+### How it works in StellarForge
+
+Two utilities are exported from `frontend/src/services/stellar.ts`:
+
+```ts
+// 1. Wrap a signed inner transaction in a fee bump envelope.
+//    The fee-source account (connected via Freighter) signs the bump.
+const signedFeeBumpXdr = await buildFeeBumpTransaction(innerTxXdr, feeSourceAddress)
+
+// 2. Submit the fee bump and wait for confirmation.
+const txHash = await submitFeeBumpTransaction(signedFeeBumpXdr)
+```
+
+The fee source must have enough XLM to cover the base fee. The inner transaction is not re-signed — only the fee bump envelope requires the fee source's signature.
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for local development setup and contribution guidelines.
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](./CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## License
 

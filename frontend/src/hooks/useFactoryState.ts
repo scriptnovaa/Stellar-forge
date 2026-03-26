@@ -106,9 +106,9 @@ async function decodeFactoryState(scVal: unknown): Promise<FactoryState> {
   return {
     admin: getAddress('admin'),
     treasury: getAddress('treasury'),
-    base_fee: getI128('base_fee'),
-    metadata_fee: getI128('metadata_fee'),
-    token_count: getU32('token_count'),
+    baseFee: getI128('base_fee').toString(),
+    metadataFee: getI128('metadata_fee').toString(),
+    tokenCount: getU32('token_count'),
     paused: getBool('paused'),
   }
 }

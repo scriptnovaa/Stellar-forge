@@ -65,15 +65,27 @@ describe('validateTokenParams - decimals', () => {
 
 import {
   isValidStellarAddress,
+  isValidContractAddress,
   isValidImageFile,
   validateTokenName,
   validateTokenSymbol,
   validateDecimals,
 } from '../utils/validation'
 
+// A real valid Ed25519 public key (Stellar foundation account)
+const VALID_ACCOUNT = 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN'
+// Same address with last char flipped — valid format, invalid checksum
+const INVALID_CHECKSUM_ACCOUNT = VALID_ACCOUNT.slice(0, 55) + (VALID_ACCOUNT[55] === 'N' ? 'M' : 'N')
+// A real valid contract address (C...)
+const VALID_CONTRACT = 'CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE'
+
 describe('isValidStellarAddress', () => {
-  it('accepts a valid 56-char G address', () => {
-    expect(isValidStellarAddress('G' + 'A'.repeat(55))).toBe(true)
+  it('accepts a real valid G address', () => {
+    expect(isValidStellarAddress(VALID_ACCOUNT)).toBe(true)
+  })
+
+  it('rejects an address with valid format but invalid checksum', () => {
+    expect(isValidStellarAddress(INVALID_CHECKSUM_ACCOUNT)).toBe(false)
   })
 
   it('rejects an address not starting with G', () => {
@@ -86,6 +98,28 @@ describe('isValidStellarAddress', () => {
 
   it('rejects an empty string', () => {
     expect(isValidStellarAddress('')).toBe(false)
+  })
+
+  it('rejects a contract address (C...) as an account address', () => {
+    expect(isValidStellarAddress(VALID_CONTRACT)).toBe(false)
+  })
+})
+
+describe('isValidContractAddress', () => {
+  it('accepts a valid contract address (C...)', () => {
+    expect(isValidContractAddress(VALID_CONTRACT)).toBe(true)
+  })
+
+  it('rejects an account address (G...) as a contract address', () => {
+    expect(isValidContractAddress(VALID_ACCOUNT)).toBe(false)
+  })
+
+  it('rejects an address that is too short', () => {
+    expect(isValidContractAddress('CABC')).toBe(false)
+  })
+
+  it('rejects an empty string', () => {
+    expect(isValidContractAddress('')).toBe(false)
   })
 })
 

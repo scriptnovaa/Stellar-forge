@@ -1,5 +1,10 @@
 // Stellar SDK integration service
 
+export interface FactoryState {
+  baseFee: number   // in stroops
+  metadataFee: number // in stroops
+}
+
 export class StellarService {
   // Placeholder for Stellar SDK methods
   async deployToken(params: any): Promise<any> {
@@ -18,6 +23,12 @@ export class StellarService {
     // Implementation for getting transaction details
     console.log('Getting transaction:', hash)
     return {}
+  }
+
+  async getFactoryState(): Promise<FactoryState> {
+    // Implementation for getting factory state (fees) from the contract
+    console.log('Getting factory state')
+    return { baseFee: 70000000, metadataFee: 10000000 } // 7 XLM, 1 XLM in stroops
   }
 }
 

@@ -16,6 +16,7 @@ import { BurnForm } from './components/BurnForm'
 import { Dashboard } from './components/Dashboard'
 import { TokenDetail } from './components/TokenDetail'
 import { isFactoryConfigured } from './config/env'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { wallet } = useWallet()
@@ -159,12 +160,12 @@ function AppContent() {
 
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <Routes>
-                <Route path="/" element={<Home onGetStarted={handleGetStarted} />} />
-                <Route path="/create" element={<ProtectedRoute><CreateToken /></ProtectedRoute>} />
-                <Route path="/mint" element={<ProtectedRoute><MintForm /></ProtectedRoute>} />
-                <Route path="/burn" element={<ProtectedRoute><BurnForm /></ProtectedRoute>} />
-                <Route path="/tokens" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/tokens/:address" element={<ProtectedRoute><TokenDetail /></ProtectedRoute>} />
+                <Route path="/" element={<ErrorBoundary><Home onGetStarted={handleGetStarted} /></ErrorBoundary>} />
+                <Route path="/create" element={<ProtectedRoute><ErrorBoundary><CreateToken /></ErrorBoundary></ProtectedRoute>} />
+                <Route path="/mint" element={<ProtectedRoute><ErrorBoundary><MintForm /></ErrorBoundary></ProtectedRoute>} />
+                <Route path="/burn" element={<ProtectedRoute><ErrorBoundary><BurnForm /></ErrorBoundary></ProtectedRoute>} />
+                <Route path="/tokens" element={<ProtectedRoute><ErrorBoundary><Dashboard /></ErrorBoundary></ProtectedRoute>} />
+                <Route path="/tokens/:address" element={<ProtectedRoute><ErrorBoundary><TokenDetail /></ErrorBoundary></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
@@ -180,15 +181,17 @@ function AppContent() {
 
 function App() {
   return (
-    <NetworkProvider>
-      <StellarProvider>
-        <WalletProvider>
-          <ToastProvider>
-            <AppContent />
-          </ToastProvider>
-        </WalletProvider>
-      </StellarProvider>
-    </NetworkProvider>
+    <ErrorBoundary>
+      <NetworkProvider>
+        <StellarProvider>
+          <WalletProvider>
+            <ToastProvider>
+              <AppContent />
+            </ToastProvider>
+          </WalletProvider>
+        </StellarProvider>
+      </NetworkProvider>
+    </ErrorBoundary>
   )
 }
 

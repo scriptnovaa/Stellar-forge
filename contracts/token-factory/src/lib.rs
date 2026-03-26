@@ -190,6 +190,25 @@ impl TokenFactory {
             return Err(Error::InsufficientFee);
         }
 
+        // Fetch TokenInfo to verify creator authorization
+        let idx_key = (&token_address, symbol_short!("idx"));
+        let index: u32 = env
+            .storage()
+            .instance()
+            .get(&idx_key)
+            .ok_or(Error::TokenNotFound)?;
+
+        let token_info: TokenInfo = env
+            .storage()
+            .instance()
+            .get(&index)
+            .ok_or(Error::TokenNotFound)?;
+
+        // Verify admin is the token creator
+        if token_info.creator != admin {
+            return Err(Error::Unauthorized);
+        }
+
         // Guard: prevent overwriting existing metadata
         if env.storage().instance().has(&(&token_address, symbol_short!("meta"))) {
             return Err(Error::MetadataAlreadySet);

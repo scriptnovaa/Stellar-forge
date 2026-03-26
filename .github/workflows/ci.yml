@@ -7,6 +7,24 @@ on:
     branches: [main, master, develop]
 
 jobs:
+  contracts:
+    name: Contracts (clippy + test)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: cargo clippy
+        run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
+        working-directory: contracts
+
+      - name: cargo test
+        run: cargo test
+        working-directory: contracts
+
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
@@ -22,7 +40,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
         working-directory: frontend
 
       - name: Run tests with coverage

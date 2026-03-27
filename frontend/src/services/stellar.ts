@@ -691,6 +691,29 @@ export class StellarService {
     }
   }
 
+  /**
+   * Check whether a Stellar account exists on Horizon.
+   * Returns false for unfunded accounts and throws on transport failures.
+   */
+  async accountExists(address: string): Promise<boolean> {
+    try {
+      const { horizonUrl } = getNetworkConfig()
+      const res = await fetch(`${horizonUrl}/accounts/${address}`)
+
+      if (res.status === 404) {
+        return false
+      }
+
+      if (!res.ok) {
+        throw new Error(`Horizon error ${res.status}`)
+      }
+
+      return true
+    } catch (err) {
+      throw err instanceof Error ? err : new Error(String(err))
+    }
+  }
+
   // ── Private helpers ─────────────────────────────────────────────────────────
 
   /**

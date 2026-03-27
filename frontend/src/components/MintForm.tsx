@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Input, Button, ConfirmModal } from './UI'
 import { useDebounce } from '../hooks/useDebounce'
 import { stellarService } from '../services/stellar'
+import { isValidStellarAddress } from '../utils/validation'
 import type { TokenInfo } from '../types'
 
 const ESTIMATED_FEE = '0.01' // XLM
+const ADDRESS_DEBOUNCE_DELAY = 500
 
 interface MintFormProps {
   tokenAddress?: string
@@ -17,13 +19,59 @@ export const MintForm: React.FC<MintFormProps> = ({ tokenAddress: initialAddress
   const [amount, setAmount] = useState('')
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null)
   const [pending, setPending] = useState(false)
+  const [recipientHasAccount, setRecipientHasAccount] = useState<boolean | null>(null)
+  const [isCheckingRecipient, setIsCheckingRecipient] = useState(false)
+  const [recipientValidationError, setRecipientValidationError] = useState<string | null>(null)
 
-  const debouncedAddress = useDebounce(tokenAddress, 300)
+  const debouncedAddress = useDebounce(tokenAddress, ADDRESS_DEBOUNCE_DELAY)
+  const debouncedRecipient = useDebounce(recipient, ADDRESS_DEBOUNCE_DELAY)
 
   useEffect(() => {
     if (!debouncedAddress) return
     stellarService.getTokenInfo(debouncedAddress).then(setTokenInfo).catch(() => setTokenInfo(null))
   }, [debouncedAddress])
+
+  useEffect(() => {
+    const trimmedRecipient = debouncedRecipient.trim()
+
+    if (!trimmedRecipient) {
+      setRecipientHasAccount(null)
+      setRecipientValidationError(null)
+      setIsCheckingRecipient(false)
+      return
+    }
+
+    if (!isValidStellarAddress(trimmedRecipient)) {
+      setRecipientHasAccount(null)
+      setRecipientValidationError('Enter a valid Stellar account address.')
+      setIsCheckingRecipient(false)
+      return
+    }
+
+    let cancelled = false
+    setRecipientValidationError(null)
+    setIsCheckingRecipient(true)
+
+    stellarService.accountExists(trimmedRecipient)
+      .then((exists) => {
+        if (cancelled) return
+        setRecipientHasAccount(exists)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setRecipientHasAccount(null)
+        setRecipientValidationError('Could not verify whether this address is funded right now.')
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsCheckingRecipient(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedRecipient])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,10 +102,26 @@ export const MintForm: React.FC<MintFormProps> = ({ tokenAddress: initialAddress
         <Input
           label="Recipient Address"
           value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
+          onChange={(e) => {
+            setRecipient(e.target.value)
+            setRecipientHasAccount(null)
+            setRecipientValidationError(null)
+            setIsCheckingRecipient(false)
+          }}
           placeholder="G..."
+          error={recipientValidationError ?? undefined}
           required
         />
+        {isCheckingRecipient && !recipientValidationError && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Checking whether the recipient account is funded...
+          </p>
+        )}
+        {recipientHasAccount === false && !recipientValidationError && (
+          <p className="text-sm text-amber-600 dark:text-amber-400" role="status">
+            This address does not have a Stellar account yet. It may need to be funded first.
+          </p>
+        )}
         <Input
           label="Amount"
           type="number"

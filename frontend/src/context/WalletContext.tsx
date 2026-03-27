@@ -14,6 +14,7 @@ interface WalletContextValue {
   isInstalled: boolean
   connect: () => Promise<void>
   disconnect: () => void
+  refreshBalance: () => Promise<void>
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null)
@@ -90,6 +91,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isInstalled,
         connect,
         disconnect,
+        refreshBalance: () => (wallet.address ? fetchBalance(wallet.address) : Promise.resolve()),
       }}
     >
       {children}
